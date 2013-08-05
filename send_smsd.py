@@ -13,6 +13,7 @@
 ## et d'envoyer le fifo sur le modem
 
 import os, sys, traceback
+import errno
 from stat import *
 #import serial
 import time
@@ -23,7 +24,7 @@ import random
 import logging
 import pdb
 
-RANDOM = [True, True, False]
+RANDOM = [True, False, False]
 
 
 ## En exploitation
@@ -105,6 +106,30 @@ def init_server(fifo):
         if not S_ISFIFO(mode):
             sortie("Type de fichier incorrect")
 
+
+## -------------------------------
+## Lecture non bloquante du fifo
+## Trouve sur 
+## http://stackoverflow.com/questions/14345816/how-python-read-named-fifo-non-blockingly?rq=1
+## -------------------------------
+def safe_read(fd, size=1024):
+    ''' reads data from a pipe and returns `None` on EAGAIN '''
+    try:
+        return os.read(fd, size)
+    except OSError, exc:
+        if exc.errno == errno.EAGAIN:
+            return None
+        raise
+
+## ----------------------------------------------------
+## Ca c'est presque que moi mais bon
+## apres lecture d'une foultitude d'exemple sur le net
+## ----------------------------------------------------
+def read_line(fd, size=256):
+    for l in safe_read(fd, size).split('\n'):
+        l = l.rstrip()
+        yield l
+
 ## ------------------
 ## La boucle infini
 ## ------------------
@@ -122,13 +147,11 @@ def loop(fifo):
     EXIT=False
     EN_ATTENTE = []
     NB_TRY = {}
+    log("Open Fifo")
+    io = os.open(fifo, os.O_RDONLY | os.O_NONBLOCK)
     while not EXIT:
-        log("Entering loop ")
-        log("Open Fifo")
-        io = open(fifo, "rw")
-        log("Loop")
-        for l in io:
-            l = l.rstrip()
+        log("Entering for loop")
+        for l in read_line(io):
             log( "recv : [%s] " % l )
             if l in ('STOP', 'SHUTDOWN'):
                 log('receive stop')
@@ -147,30 +170,36 @@ def loop(fifo):
                     EN_ATTENTE.append( (no, msg) )
                     log("sms not sended no=%s NB_TRY=%s" % (no, NB_TRY[no]))
 
-        log("Closing File")
-        io.close()
+        else:
+            log("En attente ? %s " % len(EN_ATTENTE))
+            while len(EN_ATTENTE):
+                sms = EN_ATTENTE.pop(0)
+                log("after pop : En attente ? %s " % len(EN_ATTENTE))
+                no = sms[0]
+                msg = sms[1]
+                if NB_TRY[no] < MAX_TRY:
+                    if send_sms(no, msg):
+                        log("sms %s sended after %s tries" % (no, NB_TRY[no]))
+                    else:
+                        ## on remet dans la boucle
+                        EN_ATTENTE.append( (no, msg) )
+                        ## On incremente le compteur
+                        n = NB_TRY.get(no, 0)
+                        NB_TRY[no] = n+1
+                        log("sms not sended no=%s NB_TRY=%s" % (no, NB_TRY[no]))
+                else:
+                    log("Abandon pour %s apres %s essais" % (no, NB_TRY[no]))
+                    ## c'est deja retirer de EN_ATTENTE
+                    ## reste NB_TRY
+                    del NB_TRY[no]
+        log("Attente")
         time.sleep(3)
         ## J'ai tout lu mais ais je bien bien tout envoye
-        log("En attente ? %s " % len(EN_ATTENTE))
-        while len(EN_ATTENTE):
-            sms = EN_ATTENTE.pop(0)
-            no = sms[0]
-            msg = sms[1]
-            if NB_TRY[no] < MAX_TRY:
-                if send_sms(no, msg):
-                    log("sms %s sended after %s tries" % (no, NB_TRY[no]))
-                else:
-                    ## on remet dans la boucle
-                    EN_ATTENTE.append( (no, msg) )
-                    n = NB_TRY.get(no, 0)
-                    NB_TRY[no] = n+1
-                    EN_ATTENTE.append( (no, msg) )
-                    log("sms not sended no=%s NB_TRY=%s" % (no, NB_TRY[no]))
-            else:
-                log("Abandon pour %s apres %s essais" % (no, NB_TRY[no]))
         ## On repart :)
     if EXIT:
         log( "Arret de boucle principale" )
+    log("Closing File")
+    os.close(io)
 
 ## -----------------
 ## Recupere la conf

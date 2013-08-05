@@ -29,4 +29,5 @@ while not EXIT:
     else:
         print "Attente 1s"
         time.sleep(1)
+os.close(io)
 print "FINI"
