@@ -18,9 +18,12 @@ from stat import *
 import time
 import datetime
 from ConfigParser import SafeConfigParser
+import random
 
 import logging
 import pdb
+
+RANDOM = [True, True, False]
 
 
 ## En exploitation
@@ -28,6 +31,8 @@ CONF_FILE = "/etc/send_smsd.conf"
 ## EN test
 CONF_FILE = "./send_smsd.conf"
 
+## Nombre maximum d'essai
+MAX_TRY = 5
 
 ## -------------------
 ## Sortie sur erreur
@@ -51,6 +56,8 @@ def log(msg):
 def send_sms(no, msg):
     log("no=[%s] msg=[%s]" % (no, msg) )
     time.sleep(1)
+    ## Pour l'instant rien ne fonctionne :)
+    return random.choice( RANDOM )
 ### Voici la suite pour envoyer sur le modem
 #    ser = serial.Serial(
 #        port='/dev/ttyACM0',
@@ -113,10 +120,13 @@ def init_server(fifo):
 ##
 def loop(fifo):
     EXIT=False
+    EN_ATTENTE = []
+    NB_TRY = {}
     while not EXIT:
         log("Entering loop ")
         log("Open Fifo")
         io = open(fifo, "rw")
+        log("Loop")
         for l in io:
             l = l.rstrip()
             log( "recv : [%s] " % l )
@@ -129,12 +139,36 @@ def loop(fifo):
             msg = ''.join(all)
             if no and msg:
                 log("Sending sms")
-                send_sms(no, msg)
+                if send_sms(no, msg):
+                    log("sms sended")
+                else:
+                    n = NB_TRY.get(no, 0)
+                    NB_TRY[no] = n+1
+                    EN_ATTENTE.append( (no, msg) )
+                    log("sms not sended no=%s NB_TRY=%s" % (no, NB_TRY[no]))
+
         log("Closing File")
         io.close()
         time.sleep(3)
+        ## J'ai tout lu mais ais je bien bien tout envoye
+        log("En attente ? %s " % len(EN_ATTENTE))
+        while len(EN_ATTENTE):
+            sms = EN_ATTENTE.pop(0)
+            no = sms[0]
+            msg = sms[1]
+            if NB_TRY[no] < MAX_TRY:
+                if send_sms(no, msg):
+                    log("sms %s sended after %s tries" % (no, NB_TRY[no]))
+                else:
+                    ## on remet dans la boucle
+                    EN_ATTENTE.append( (no, msg) )
+                    n = NB_TRY.get(no, 0)
+                    NB_TRY[no] = n+1
+                    EN_ATTENTE.append( (no, msg) )
+                    log("sms not sended no=%s NB_TRY=%s" % (no, NB_TRY[no]))
+            else:
+                log("Abandon pour %s apres %s essais" % (no, NB_TRY[no]))
         ## On repart :)
-
     if EXIT:
         log( "Arret de boucle principale" )
 
