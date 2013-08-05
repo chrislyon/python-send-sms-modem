@@ -3,7 +3,17 @@
 ## Envoi d'un sms sur le serveur sendsms_d
 ## ------------------------------------------
 
-SMS_FIFO=/var/run/send_smsd/send_smsd.fifo
+## Note : 
+##  il s'agit tout simplement de poser dans un fifo une chaine de caractere
+##  TODO :
+##  verifcation diverses : fifo / numero etc ...
+
+## en prod
+CONF=/etc/send_smsd.conf
+## en test
+CONF=./send_smsd.conf
+
+SMS_FIFO=$( cat $CONF | grep fifo_path | cut -d'=' -f2 | tr -d [:blank:] )
 
 usage()
 {
