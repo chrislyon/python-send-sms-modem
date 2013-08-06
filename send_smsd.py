@@ -12,11 +12,6 @@
 ## qui est chargé de lire une ligne
 ## et d'envoyer le fifo sur le modem
 
-## TODO
-## c'est du brut de decoffrage, mais cela marchouille
-## reste a affiner le tout et peut etre ameliorer
-## certaine parties du code qui n'est pas au top
-
 import os, sys, traceback
 import errno
 from stat import *
@@ -328,7 +323,7 @@ def loop(fifo):
                         ## On incremente le compteur
                         n = NB_TRY.get(no, 0)
                         NB_TRY[no] = n+1
-                        log("sms not sended no=%s NB_TRY=%s MSG=%S" % (no, NB_TRY[no], MSG))
+                        log("sms not sended no=%s NB_TRY=%s MSG=%s" % (no, NB_TRY[no], MSG))
                 else:
                     log("Abandon pour %s apres %s essais" % (no, NB_TRY[no]))
                     ## c'est deja retirer de EN_ATTENTE
