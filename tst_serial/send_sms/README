@@ -1,0 +1,28 @@
+Thu Jul  4 18:03:04 CEST 2013
+Premier commit
+
+Thu Jul  4 18:03:09 CEST 2013
+Commit 2 & 3 
+
+j'ai mis les sources
+
+Principe de base :
+
+un modem est sur un port USB gérer comme une sortie série
+probleme impossible d'envoyer plusieurs sms comme cela
+il faut que cela soit concurrent.
+
+Ainsi creation d'un script send_sms dont le role est de collecter
+le numero et d'envoyer le tout (format no:message) sur un fichier fifo
+
+sendsmsd lui est chargé de lire le fichier fifo puis d'envoyer
+la ligne sur le modem
+comme il s'agit d'un fichier fifo les lignes arrivent les une apres les autres
+
+
+Fri Jul  5 14:28:42 CEST 2013
+
+send_sms			shell script pour l'envoi de sms
+send_smsd.py		daemon qui lit le fifo
+send_smsd.service	le script /etc/init.d pour Suse
+

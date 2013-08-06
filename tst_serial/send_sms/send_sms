@@ -1,0 +1,40 @@
+:
+## ------------------------------------------
+## Envoi d'un sms sur le serveur sendsms_d
+## ------------------------------------------
+
+SMS_FIFO=/var/run/send_smsd/send_smsd.fifo
+
+usage()
+{
+	echo "usage: $0 No_de_tel \"Message\""
+	echo "	Message mettre entre double quote"
+	exit 1
+}
+
+send_sms()
+{
+	echo "envoi de no={$no} msg={$msg} sur [SMS_FIFO]"
+	echo "${no}:${msg}" > $SMS_FIFO
+}
+
+## ----------
+## MAIN
+## ----------
+if [ $# -le 1 ]
+then
+	usage
+else
+	no="$1"
+	shift
+	msg="$*"
+
+	if [[ $no =~ [0-9]{10} ]]
+	then
+		#echo "no={$no} msg={$msg}"
+		send_sms 
+	else
+		echo "No : $no incorrect"
+		usage
+	fi
+fi

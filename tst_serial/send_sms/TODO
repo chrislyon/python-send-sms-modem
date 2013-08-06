@@ -1,0 +1,7 @@
+
+1 - Faire un service avec send_smsd sur la machine zabbix
+    cela doit demarrer et s'arreter avec le serveur
+2 - daemonizer send_smsd
+3 - modifier la procedure actuelle pour prendre en compte les scripts
+
+Log des traces ...
