@@ -11,7 +11,7 @@
 ## en prod
 CONF=/etc/send_smsd.conf
 ## en test
-CONF=./send_smsd.conf
+#CONF=./send_smsd.conf
 
 SMS_FIFO=$( cat $CONF | grep fifo_path | cut -d'=' -f2 | tr -d [:blank:] )
 

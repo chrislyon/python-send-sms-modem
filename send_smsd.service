@@ -31,8 +31,10 @@ SEND_SMSD=/usr/local/bin/send_smsd
 
 # Get pid file name from config
 #PidFile=$(grep ^PidFile $ZABBIX_AGENTD_CONFIG|cut -d "=" -f 2)
-PidFile=/var/run/send_smsd/send_smsd.pid
-SEND_SMSD_FIFO=/var/run/send_smsd/send_smsd.fifo
+
+## Recup de PIDFILE et FIFO
+PidFile=$(cat /etc/send_smsd.conf | grep pid_file | cut -d'=' -f2)
+SEND_SMSD_FIFO=$(cat /etc/send_smsd.conf | grep fifo_path | cut -d'=' -f2 | sed -e 's/ //g')
 
 # Source LSB init functions
 # providing start_daemon, killproc, pidofproc, 
@@ -86,6 +88,7 @@ case "$1" in
 		rc_status -v
 		;;
     stop)
+		set -x
 		echo -n "Shutting down SEND SMS FIfo"
 		echo "STOP" > $SEND_SMSD_FIFO
 		## Stop daemon with killproc(8) and if this fails
