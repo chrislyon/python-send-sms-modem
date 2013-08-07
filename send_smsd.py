@@ -256,8 +256,10 @@ def safe_read(fd, size=1024):
 ## ----------------------------------------------------
 ## Ca c'est presque que moi mais bon
 ## apres lecture d'une foultitude d'exemple sur le net
+## Note attention a size : probleme msg tronque avec size=256
+## sur le 5eme message
 ## ----------------------------------------------------
-def read_line(fd, size=256):
+def read_line(fd, size=1024):
     for l in safe_read(fd, size).split('\n'):
         l = l.rstrip()
         yield l

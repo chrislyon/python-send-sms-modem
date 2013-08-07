@@ -1,6 +1,7 @@
 import time
 import errno
 import os
+import random
 
 def safe_read(fd, size=1024):
     ''' reads data from a pipe and returns `None` on EAGAIN '''
@@ -11,10 +12,13 @@ def safe_read(fd, size=1024):
             return None
         raise
 
-def read_line(fd, size=1024):
-    for l in safe_read(fd, size).split('\n'):
-        l = l.rstrip()
-        yield l
+## Note avec size = 256 => probleme de message tronque
+def read_line(fd, size=512):
+    data = safe_read(fd, size).split('\n')
+    if data:
+        for l in data:
+            l = l.rstrip()
+            yield l
 
 fifo = './fifo'
 
@@ -24,6 +28,9 @@ EXIT = False
 while not EXIT:
     for l in read_line(io):
         print "Lecture de [%s] " % l
+        n = random.choice([1,2,3])
+        print "Attente : %s s" % n
+        time.sleep(n) 
         if l == "STOP":
             EXIT = True
     else:
